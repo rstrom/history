@@ -24,7 +24,7 @@ export enum Action {
    * A REPLACE indicates the entry at the current index in the history stack
    * being replaced by a new one.
    */
-  Replace = 'REPLACE'
+  Replace = 'REPLACE',
 }
 
 /**
@@ -351,8 +351,8 @@ export interface MemoryHistory<S extends State = State> extends History<S> {
 }
 
 const readOnly: <T extends unknown>(obj: T) => T = __DEV__
-  ? obj => Object.freeze(obj)
-  : obj => obj;
+  ? (obj) => Object.freeze(obj)
+  : (obj) => obj;
 
 function warning(cond: boolean, message: string) {
   if (!cond) {
@@ -410,8 +410,8 @@ export function createBrowserHistory(
         search,
         hash,
         state: state.usr || null,
-        key: state.key || 'default'
-      })
+        key: state.key || 'default',
+      }),
     ];
   }
 
@@ -434,7 +434,7 @@ export function createBrowserHistory(
               location: nextLocation,
               retry() {
                 go(delta * -1);
-              }
+              },
             };
 
             go(delta);
@@ -481,7 +481,7 @@ export function createBrowserHistory(
       ...location,
       ...(typeof to === 'string' ? parsePath(to) : to),
       state,
-      key: createKey()
+      key: createKey(),
     });
   }
 
@@ -493,9 +493,9 @@ export function createBrowserHistory(
       {
         usr: nextLocation.state,
         key: nextLocation.key,
-        idx: index
+        idx: index,
       },
-      createHref(nextLocation)
+      createHref(nextLocation),
     ];
   }
 
@@ -526,6 +526,12 @@ export function createBrowserHistory(
       try {
         globalHistory.pushState(historyState, '', url);
       } catch (error) {
+        let virtualLink = document.createElement('a');
+        virtualLink.href = url;
+        // throw error in case url is not local path
+        if (virtualLink.host !== window.location.host) {
+          throw error;
+        }
         // They are going to lose state here, but there is no real
         // way to warn them about it since the page will refresh...
         window.location.assign(url);
@@ -583,7 +589,7 @@ export function createBrowserHistory(
         window.addEventListener(BeforeUnloadEventType, promptBeforeUnload);
       }
 
-      return function() {
+      return function () {
         unblock();
 
         // Remove the beforeunload listener so the document may
@@ -593,7 +599,7 @@ export function createBrowserHistory(
           window.removeEventListener(BeforeUnloadEventType, promptBeforeUnload);
         }
       };
-    }
+    },
   };
 
   return history;
@@ -620,9 +626,11 @@ export function createHashHistory(
   let globalHistory = window.history;
 
   function getIndexAndLocation(): [number, Location] {
-    let { pathname = '/', search = '', hash = '' } = parsePath(
-      window.location.hash.substr(1)
-    );
+    let {
+      pathname = '/',
+      search = '',
+      hash = '',
+    } = parsePath(window.location.hash.substr(1));
     let state = globalHistory.state || {};
     return [
       state.idx,
@@ -631,8 +639,8 @@ export function createHashHistory(
         search,
         hash,
         state: state.usr || null,
-        key: state.key || 'default'
-      })
+        key: state.key || 'default',
+      }),
     ];
   }
 
@@ -655,7 +663,7 @@ export function createHashHistory(
               location: nextLocation,
               retry() {
                 go(delta * -1);
-              }
+              },
             };
 
             go(delta);
@@ -726,7 +734,7 @@ export function createHashHistory(
       ...location,
       ...(typeof to === 'string' ? parsePath(to) : to),
       state,
-      key: createKey()
+      key: createKey(),
     });
   }
 
@@ -738,9 +746,9 @@ export function createHashHistory(
       {
         usr: nextLocation.state,
         key: nextLocation.key,
-        idx: index
+        idx: index,
       },
-      createHref(nextLocation)
+      createHref(nextLocation),
     ];
   }
 
@@ -778,6 +786,12 @@ export function createHashHistory(
       try {
         globalHistory.pushState(historyState, '', url);
       } catch (error) {
+        let virtualLink = document.createElement('a');
+        virtualLink.href = url;
+        // throw error in case url is not local path
+        if (virtualLink.host !== window.location.host) {
+          throw error;
+        }
         // They are going to lose state here, but there is no real
         // way to warn them about it since the page will refresh...
         window.location.assign(url);
@@ -842,7 +856,7 @@ export function createHashHistory(
         window.addEventListener(BeforeUnloadEventType, promptBeforeUnload);
       }
 
-      return function() {
+      return function () {
         unblock();
 
         // Remove the beforeunload listener so the document may
@@ -852,7 +866,7 @@ export function createHashHistory(
           window.removeEventListener(BeforeUnloadEventType, promptBeforeUnload);
         }
       };
-    }
+    },
   };
 
   return history;
@@ -883,14 +897,14 @@ export function createMemoryHistory(
   options: MemoryHistoryOptions = {}
 ): MemoryHistory {
   let { initialEntries = ['/'], initialIndex } = options;
-  let entries: Location[] = initialEntries.map(entry => {
+  let entries: Location[] = initialEntries.map((entry) => {
     let location = readOnly<Location>({
       pathname: '/',
       search: '',
       hash: '',
       state: null,
       key: createKey(),
-      ...(typeof entry === 'string' ? parsePath(entry) : entry)
+      ...(typeof entry === 'string' ? parsePath(entry) : entry),
     });
 
     warning(
@@ -922,7 +936,7 @@ export function createMemoryHistory(
       ...location,
       ...(typeof to === 'string' ? parsePath(to) : to),
       state,
-      key: createKey()
+      key: createKey(),
     });
   }
 
@@ -1018,7 +1032,7 @@ export function createMemoryHistory(
     },
     block(blocker) {
       return blockers.push(blocker);
-    }
+    },
   };
 
   return history;
@@ -1054,20 +1068,18 @@ function createEvents<F extends Function>(): Events<F> {
     },
     push(fn: F) {
       handlers.push(fn);
-      return function() {
-        handlers = handlers.filter(handler => handler !== fn);
+      return function () {
+        handlers = handlers.filter((handler) => handler !== fn);
       };
     },
     call(arg) {
-      handlers.forEach(fn => fn && fn(arg));
-    }
+      handlers.forEach((fn) => fn && fn(arg));
+    },
   };
 }
 
 function createKey() {
-  return Math.random()
-    .toString(36)
-    .substr(2, 8);
+  return Math.random().toString(36).substr(2, 8);
 }
 
 /**
@@ -1078,7 +1090,7 @@ function createKey() {
 export function createPath({
   pathname = '/',
   search = '',
-  hash = ''
+  hash = '',
 }: PartialPath) {
   return pathname + search + hash;
 }
